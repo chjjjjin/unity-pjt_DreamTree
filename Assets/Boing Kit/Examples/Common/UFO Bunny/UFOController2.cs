@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace BoingKit
 {
-  public class UFOController : MonoBehaviour
+  public class UFOController2 : MonoBehaviour
   {
     public float LinearThrust = 3.0f;
     public float MaxLinearSpeed = 2.5f;
@@ -81,31 +81,31 @@ namespace BoingKit
     {
       float dt = Time.fixedDeltaTime;
 
-      Vector3 linearInputVec = Vector3.zero;
-      if (Input.GetKey(KeyCode.W))
-        linearInputVec += Vector3.forward;
-      if (Input.GetKey(KeyCode.S))
-        linearInputVec += Vector3.back;
-      if (Input.GetKey(KeyCode.A))
-            linearInputVec += Vector3.left;
-      if (Input.GetKey(KeyCode.D))
-        linearInputVec += Vector3.right;
-      if (Input.GetKey(KeyCode.R))
-        linearInputVec += Vector3.up;
-      if (Input.GetKey(KeyCode.F))
-        linearInputVec += Vector3.down;
+      //Vector3 linearInputVec = Vector3.zero;
+      //if (Input.GetKey(KeyCode.W))
+      //  linearInputVec += Vector3.forward;
+      //if (Input.GetKey(KeyCode.S))
+      //  linearInputVec += Vector3.back;
+      //if (Input.GetKey(KeyCode.A))
+      //  linearInputVec += Vector3.left;
+      //if (Input.GetKey(KeyCode.D))
+      //  linearInputVec += Vector3.right;
+      //if (Input.GetKey(KeyCode.R))
+      //  linearInputVec += Vector3.up;
+      //if (Input.GetKey(KeyCode.F))
+      //  linearInputVec += Vector3.down;
 
-      bool linearThrustOn = linearInputVec.sqrMagnitude > MathUtil.Epsilon;
-      if (linearThrustOn)
-      {
-        linearInputVec = linearInputVec.normalized * LinearThrust;
-        m_linearVelocity += linearInputVec * dt;
-        m_linearVelocity = VectorUtil.ClampLength(m_linearVelocity, 0.0f, MaxLinearSpeed);
-      }
-      else
-      {
-        m_linearVelocity = VectorUtil.ClampLength(m_linearVelocity, 0.0f, Mathf.Max(0.0f, m_linearVelocity.magnitude - LinearDrag * dt));
-      }
+      //bool linearThrustOn = linearInputVec.sqrMagnitude > MathUtil.Epsilon;
+      //if (linearThrustOn)
+      //{
+      //  linearInputVec = linearInputVec.normalized * LinearThrust;
+      //  m_linearVelocity += linearInputVec * dt;
+      //  m_linearVelocity = VectorUtil.ClampLength(m_linearVelocity, 0.0f, MaxLinearSpeed);
+      //}
+      //else
+      //{
+      //  m_linearVelocity = VectorUtil.ClampLength(m_linearVelocity, 0.0f, Mathf.Max(0.0f, m_linearVelocity.magnitude - LinearDrag * dt));
+      //}
 
       float speed = m_linearVelocity.magnitude;
       float tSpeed = speed * MathUtil.InvSafe(MaxLinearSpeed);
@@ -128,10 +128,10 @@ namespace BoingKit
       }
 
       float angularInput = 0.0f;
-      if (Input.GetKey(KeyCode.J))
-        angularInput -= 0.5f;
-      if (Input.GetKey(KeyCode.K))
-        angularInput += 0.5f;
+      if (Input.GetKey(KeyCode.Q))
+        angularInput -= 1.0f;
+      if (Input.GetKey(KeyCode.E))
+        angularInput += 1.0f;
 
       bool largerMaxAngularSpeed = Input.GetKey(KeyCode.LeftControl);
 
