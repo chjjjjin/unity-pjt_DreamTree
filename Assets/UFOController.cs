@@ -12,7 +12,6 @@ using UnityEngine;
 using UnityStandardAssets.Utility;
 using Photon.Pun;
 
-
 namespace BoingKit
 {
     public class UFOController : MonoBehaviourPun, IPunObservable
@@ -61,11 +60,10 @@ namespace BoingKit
         private float h;
 
         private PhotonView pv = null;
-       
 
-        //private Vector3 currPos = Vector3.zero;
-        //private Quaternion currRot = Quaternion.identity;
-
+        //위치정보를 송수신할 때 사용할 변수(이동과 회전)
+        private Vector3 currPos = Vector3.zero;
+        private Quaternion currRot = Quaternion.identity;
 
         void Start()
         {
@@ -87,7 +85,7 @@ namespace BoingKit
                 m_eyePositionLsSpring.Reset(m_eyeInitPositionLs);
             }
 
-            
+
             tr = GetComponent<Transform>();
 
             pv = GetComponent<PhotonView>();
@@ -96,7 +94,7 @@ namespace BoingKit
 
             if (pv.IsMine)
             {
-                Camera.main.GetComponent<SmoothFollow>().target = camPivot;               
+                Camera.main.GetComponent<SmoothFollow>().target = camPivot;
             }
         }
 
@@ -107,122 +105,132 @@ namespace BoingKit
 
         void FixedUpdate()
         {
-            float dt = Time.fixedDeltaTime;
-
-            Vector3 linearInputVec = Vector3.zero;
-            if (Input.GetKey(KeyCode.W))
-                linearInputVec += transform.forward;
-            if (Input.GetKey(KeyCode.S))
-                linearInputVec -= transform.forward;
-            if (Input.GetKey(KeyCode.A))
-                linearInputVec -= transform.right;
-            if (Input.GetKey(KeyCode.D))
-                linearInputVec += transform.right;
-            if (Input.GetKey(KeyCode.R))
-                linearInputVec += Vector3.up;
-            if (Input.GetKey(KeyCode.F))
-                linearInputVec += Vector3.down;
-
-            bool linearThrustOn = linearInputVec.sqrMagnitude > MathUtil.Epsilon;
-            if (linearThrustOn)
+            if (pv.IsMine)
             {
-                linearInputVec = linearInputVec.normalized * LinearThrust;
-                m_linearVelocity += linearInputVec * dt;
-                m_linearVelocity = VectorUtil.ClampLength(m_linearVelocity, 0.0f, MaxLinearSpeed);
-            }
-            else
-            {
-                m_linearVelocity = VectorUtil.ClampLength(m_linearVelocity, 0.0f, Mathf.Max(0.0f, m_linearVelocity.magnitude - LinearDrag * dt));
-            }
+                float dt = Time.fixedDeltaTime;
 
-            float speed = m_linearVelocity.magnitude;
-            float tSpeed = speed * MathUtil.InvSafe(MaxLinearSpeed);
+                Vector3 linearInputVec = Vector3.zero;
+                if (Input.GetKey(KeyCode.W))
+                    linearInputVec += transform.forward;
+                if (Input.GetKey(KeyCode.S))
+                    linearInputVec -= transform.forward;
+                if (Input.GetKey(KeyCode.Q))
+                    linearInputVec -= transform.right;
+                if (Input.GetKey(KeyCode.E))
+                    linearInputVec += transform.right;
+                if (Input.GetKey(KeyCode.R))
+                    linearInputVec += Vector3.up;
+                if (Input.GetKey(KeyCode.F))
+                    linearInputVec += Vector3.down;
 
-            Quaternion tiltRot = Quaternion.identity;
-            float tHorizontal = 1.0f;
-            float tHorizontalSpeed = 0.0f;
-            if (speed > MathUtil.Epsilon)
-            {
-                Vector3 flatVel = m_linearVelocity;
-                flatVel.y = 0.0f;
-                tHorizontal =
-                  m_linearVelocity.magnitude > 0.01f
-                    ? 1.0f - Mathf.Clamp01(Mathf.Abs(m_linearVelocity.y) / m_linearVelocity.magnitude)
-                    : 0.0f;
-                tHorizontalSpeed = Mathf.Min(1.0f, speed / Mathf.Max(MathUtil.Epsilon, MaxLinearSpeed)) * tHorizontal;
-                //Vector3 tiltAxis = Vector3.Cross(Vector3.up, flatVel).normalized;
-                //float tiltAngle = Tilt * MathUtil.Deg2Rad * tHorizontalSpeed;
-                //tiltRot = QuaternionUtil.AxisAngle(tiltAxis, tiltAngle);
-            }
-
-            float angularInput = 0.0f;
-            if (Input.GetKey(KeyCode.J))
-                angularInput -= 2.0f;
-            if (Input.GetKey(KeyCode.K))
-                angularInput += 2.0f;
-
-            bool largerMaxAngularSpeed = Input.GetKey(KeyCode.LeftControl);
-
-            bool angularThurstOn = Mathf.Abs(angularInput) > MathUtil.Epsilon;
-            if (angularThurstOn)
-            {
-                float maxAngularSpeed = MaxAngularSpeed * (largerMaxAngularSpeed ? 2.5f : 1.0f);
-                angularInput *= AngularThrust * MathUtil.Deg2Rad;
-                m_angularVelocity += angularInput * dt;
-                m_angularVelocity = Mathf.Clamp(m_angularVelocity, -maxAngularSpeed * MathUtil.Deg2Rad, maxAngularSpeed * MathUtil.Deg2Rad);
-            }
-            else
-            {
-                m_angularVelocity -= Mathf.Sign(m_angularVelocity) * Mathf.Min(Mathf.Abs(m_angularVelocity), AngularDrag * MathUtil.Deg2Rad * dt);
-            }
-            m_yawAngle += m_angularVelocity * dt;
-            Quaternion yawRot = QuaternionUtil.AxisAngle(Vector3.up, m_yawAngle);
-
-            m_hoverCenter += m_linearVelocity * dt;
-            m_hoverPhase += Time.deltaTime;
-
-            Vector3 hoverVec =
-                0.05f * Mathf.Sin(1.37f * m_hoverPhase) * Vector3.right
-              + 0.05f * Mathf.Sin(1.93f * m_hoverPhase + 1.234f) * Vector3.forward
-              + 0.04f * Mathf.Sin(0.97f * m_hoverPhase + 4.321f) * Vector3.up;
-            hoverVec *= Hover;
-
-            // Quaternion hoverQuat = Quaternion.FromToRotation(Vector3.up, hoverVec + Vector3.up);
-
-            transform.position = m_hoverCenter + hoverVec;
-            transform.rotation = tiltRot * yawRot;  //*hoverQuat;
-
-            if (Motor != null)
-            {
-                float motorAngularSpeedDeg = Mathf.Lerp(MotorBaseAngularSpeed, MotorMaxAngularSpeed, tHorizontalSpeed);
-                m_motorAngle += motorAngularSpeedDeg * MathUtil.Deg2Rad * dt;
-                Motor.localRotation = QuaternionUtil.AxisAngle(Vector3.up, m_motorAngle - m_yawAngle);
-            }
-
-            if (BubbleEmitter != null)
-            {
-                var emission = BubbleEmitter.emission;
-                emission.rateOverTime = Mathf.Lerp(BubbleBaseEmissionRate, BubbleMaxEmissionRate, tSpeed);
-            }
-
-            if (Eyes != null)
-            {
-                m_blinkTimer -= dt;
-                if (m_blinkTimer <= 0.0f)
+                bool linearThrustOn = linearInputVec.sqrMagnitude > MathUtil.Epsilon;
+                if (linearThrustOn)
                 {
-                    bool doubleBlink = !m_lastBlinkWasDouble && Random.Range(0.0f, 1.0f) > 0.75f;
-                    m_blinkTimer =
-                        doubleBlink
-                          ? 0.2f
-                          : BlinkInterval + Random.Range(1.0f, 2.0f);
-                    m_lastBlinkWasDouble = doubleBlink;
-
-                    m_eyeScaleSpring.Value.y = 0.0f;
-                    m_eyePositionLsSpring.Value.y -= 0.025f;
+                    linearInputVec = linearInputVec.normalized * LinearThrust;
+                    m_linearVelocity += linearInputVec * dt;
+                    m_linearVelocity = VectorUtil.ClampLength(m_linearVelocity, 0.0f, MaxLinearSpeed);
+                }
+                else
+                {
+                    m_linearVelocity = VectorUtil.ClampLength(m_linearVelocity, 0.0f, Mathf.Max(0.0f, m_linearVelocity.magnitude - LinearDrag * dt));
                 }
 
-                Eyes.localScale = m_eyeScaleSpring.TrackDampingRatio(m_eyeInitScale, 30.0f, 0.8f, dt);
-                Eyes.localPosition = m_eyePositionLsSpring.TrackDampingRatio(m_eyeInitPositionLs, 30.0f, 0.8f, dt);
+                float speed = m_linearVelocity.magnitude;
+                float tSpeed = speed * MathUtil.InvSafe(MaxLinearSpeed);
+
+                Quaternion tiltRot = Quaternion.identity;
+                float tHorizontal = 1.0f;
+                float tHorizontalSpeed = 0.0f;
+                if (speed > MathUtil.Epsilon)
+                {
+                    Vector3 flatVel = m_linearVelocity;
+                    flatVel.y = 0.0f;
+                    tHorizontal =
+                      m_linearVelocity.magnitude > 0.01f
+                        ? 1.0f - Mathf.Clamp01(Mathf.Abs(m_linearVelocity.y) / m_linearVelocity.magnitude)
+                        : 0.0f;
+                    tHorizontalSpeed = Mathf.Min(1.0f, speed / Mathf.Max(MathUtil.Epsilon, MaxLinearSpeed)) * tHorizontal;
+                    //Vector3 tiltAxis = Vector3.Cross(Vector3.up, flatVel).normalized;
+                    //float tiltAngle = Tilt * MathUtil.Deg2Rad * tHorizontalSpeed;
+                    //tiltRot = QuaternionUtil.AxisAngle(tiltAxis, tiltAngle);
+                }
+
+                float angularInput = 0.0f;
+                if (Input.GetKey(KeyCode.A))
+                    angularInput -= 0.5f;
+                if (Input.GetKey(KeyCode.D))
+                    angularInput += 0.5f;
+
+                bool largerMaxAngularSpeed = Input.GetKey(KeyCode.LeftControl);
+
+                bool angularThurstOn = Mathf.Abs(angularInput) > MathUtil.Epsilon;
+                if (angularThurstOn)
+                {
+                    float maxAngularSpeed = MaxAngularSpeed * (largerMaxAngularSpeed ? 2.5f : 1.0f);
+                    angularInput *= AngularThrust * MathUtil.Deg2Rad;
+                    m_angularVelocity += angularInput * dt;
+                    m_angularVelocity = Mathf.Clamp(m_angularVelocity, -maxAngularSpeed * MathUtil.Deg2Rad, maxAngularSpeed * MathUtil.Deg2Rad);
+                }
+                else
+                {
+                    m_angularVelocity -= Mathf.Sign(m_angularVelocity) * Mathf.Min(Mathf.Abs(m_angularVelocity), AngularDrag * MathUtil.Deg2Rad * dt);
+                }
+                m_yawAngle += m_angularVelocity * dt;
+                Quaternion yawRot = QuaternionUtil.AxisAngle(Vector3.up, m_yawAngle);
+
+                m_hoverCenter += m_linearVelocity * dt;
+                m_hoverPhase += Time.deltaTime;
+
+                Vector3 hoverVec =
+                    0.05f * Mathf.Sin(1.37f * m_hoverPhase) * Vector3.right
+                  + 0.05f * Mathf.Sin(1.93f * m_hoverPhase + 1.234f) * Vector3.forward
+                  + 0.04f * Mathf.Sin(0.97f * m_hoverPhase + 4.321f) * Vector3.up;
+                hoverVec *= Hover;
+
+                // Quaternion hoverQuat = Quaternion.FromToRotation(Vector3.up, hoverVec + Vector3.up);
+
+                transform.position = m_hoverCenter + hoverVec;
+                transform.rotation = tiltRot * yawRot;  //*hoverQuat;
+
+                if (Motor != null)
+                {
+                    float motorAngularSpeedDeg = Mathf.Lerp(MotorBaseAngularSpeed, MotorMaxAngularSpeed, tHorizontalSpeed);
+                    m_motorAngle += motorAngularSpeedDeg * MathUtil.Deg2Rad * dt;
+                    Motor.localRotation = QuaternionUtil.AxisAngle(Vector3.up, m_motorAngle - m_yawAngle);
+                }
+
+                if (BubbleEmitter != null)
+                {
+                    var emission = BubbleEmitter.emission;
+                    emission.rateOverTime = Mathf.Lerp(BubbleBaseEmissionRate, BubbleMaxEmissionRate, tSpeed);
+                }
+
+                if (Eyes != null)
+                {
+                    m_blinkTimer -= dt;
+                    if (m_blinkTimer <= 0.0f)
+                    {
+                        bool doubleBlink = !m_lastBlinkWasDouble && Random.Range(0.0f, 1.0f) > 0.75f;
+                        m_blinkTimer =
+                            doubleBlink
+                              ? 0.2f
+                              : BlinkInterval + Random.Range(1.0f, 2.0f);
+                        m_lastBlinkWasDouble = doubleBlink;
+
+                        m_eyeScaleSpring.Value.y = 0.0f;
+                        m_eyePositionLsSpring.Value.y -= 0.025f;
+                    }
+
+                    Eyes.localScale = m_eyeScaleSpring.TrackDampingRatio(m_eyeInitScale, 30.0f, 0.8f, dt);
+                    Eyes.localPosition = m_eyePositionLsSpring.TrackDampingRatio(m_eyeInitPositionLs, 30.0f, 0.8f, dt);
+                }
+            }
+            else
+            {
+                //원격 플레이어의 탱크를 수신받은 위치까지 부드럽게 이동
+                tr.position = Vector3.Lerp(tr.position, currPos, Time.deltaTime * 3.0f);
+                //원격 플레이어의 탱크를 수신받은 위치까지 부드럽게 회전
+                tr.rotation = Quaternion.Slerp(tr.rotation, currRot, Time.deltaTime * 3.0f);
             }
         }
 
@@ -233,10 +241,10 @@ namespace BoingKit
                 stream.SendNext(tr.position);
                 stream.SendNext(tr.rotation);
             }
-            else
+            else // 원격 플레이어의 위치, 회전값 수신
             {
-                //currPos = (Vector3)stream.ReceiveNext();
-                //currRot = (Quaternion)stream.ReceiveNext();
+                currPos = (Vector3)stream.ReceiveNext();
+                currRot = (Quaternion)stream.ReceiveNext();
             }
         }
     }
