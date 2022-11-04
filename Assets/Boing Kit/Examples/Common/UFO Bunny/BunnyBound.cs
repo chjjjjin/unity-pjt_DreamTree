@@ -6,10 +6,13 @@ public class BunnyBound : MonoBehaviour
 {
     private void OnCollisionEnter(Collision collision)
     {
-        Debug.Log("충돌");
-        ExcecuteReBounding(collision);
-        StartCoroutine(CtrlOnf());
-        Debug.Log("함수 실행");
+        if (gameObject.tag == "WALL")
+        {
+            Debug.Log("충돌");
+            ExcecuteReBounding(collision);
+            StartCoroutine(CtrlOnf());
+            Debug.Log("함수 실행");
+        }
     }
 
     IEnumerator CtrlOnf()

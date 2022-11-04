@@ -127,26 +127,26 @@ namespace BoingKit
         tiltRot = QuaternionUtil.AxisAngle(tiltAxis, tiltAngle);
       }
 
-      float angularInput = 0.0f;
-      if (Input.GetKey(KeyCode.Q))
-        angularInput -= 1.0f;
-      if (Input.GetKey(KeyCode.E))
-        angularInput += 1.0f;
+      //float angularInput = 0.0f;
+      //if (Input.GetKey(KeyCode.Q))
+      //  angularInput -= 1.0f;
+      //if (Input.GetKey(KeyCode.E))
+      //  angularInput += 1.0f;
 
-      bool largerMaxAngularSpeed = Input.GetKey(KeyCode.LeftControl);
+      //bool largerMaxAngularSpeed = Input.GetKey(KeyCode.LeftControl);
 
-      bool angularThurstOn = Mathf.Abs(angularInput) > MathUtil.Epsilon;
-      if (angularThurstOn)
-      {
-        float maxAngularSpeed = MaxAngularSpeed * (largerMaxAngularSpeed ? 2.5f : 1.0f);
-        angularInput *= AngularThrust * MathUtil.Deg2Rad;
-        m_angularVelocity += angularInput * dt;
-        m_angularVelocity = Mathf.Clamp(m_angularVelocity, -maxAngularSpeed * MathUtil.Deg2Rad, maxAngularSpeed * MathUtil.Deg2Rad);
-      }
-      else
-      {
-        m_angularVelocity -= Mathf.Sign(m_angularVelocity) * Mathf.Min(Mathf.Abs(m_angularVelocity), AngularDrag * MathUtil.Deg2Rad * dt);
-      }
+      //bool angularThurstOn = Mathf.Abs(angularInput) > MathUtil.Epsilon;
+      //if (angularThurstOn)
+      //{
+      //  float maxAngularSpeed = MaxAngularSpeed * (largerMaxAngularSpeed ? 2.5f : 1.0f);
+      //  angularInput *= AngularThrust * MathUtil.Deg2Rad;
+      //  m_angularVelocity += angularInput * dt;
+      //  m_angularVelocity = Mathf.Clamp(m_angularVelocity, -maxAngularSpeed * MathUtil.Deg2Rad, maxAngularSpeed * MathUtil.Deg2Rad);
+      //}
+      //else
+      //{
+      //  m_angularVelocity -= Mathf.Sign(m_angularVelocity) * Mathf.Min(Mathf.Abs(m_angularVelocity), AngularDrag * MathUtil.Deg2Rad * dt);
+      //}
       m_yawAngle += m_angularVelocity * dt;
       Quaternion yawRot = QuaternionUtil.AxisAngle(Vector3.up, m_yawAngle);
 
